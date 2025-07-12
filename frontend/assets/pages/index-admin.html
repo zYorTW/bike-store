@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="../styles/style-index-admin.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <div class="top-dashboard">
+        <h1>Panel de Administración</h1>
+        <div>
+            <button>Cerrar Sesión</button>
+        </div>
+    </div>
+
+    <div class="options-dashboard">
+        <div class="opcion" id="usuarios"><i class="fa-solid fa-users"></i>
+            <p>Usuarios</p>
+        </div>
+        <div class="opcion" id="productos"><i class="fa-solid fa-boxes-stacked"></i>
+            <p>Productos</p>
+        </div>
+        <div class="opcion" id="ventas"><i class="fa-solid fa-file-contract"></i>
+            <p>Ventas</p>
+        </div>
+    </div>
+
+
+    <script>
+        let panelUsuarios = document.getElementById('usuarios');
+        let panelProductos = document.getElementById('productos');
+        let panelVentas = document.getElementById('ventas');
+    
+        panelUsuarios.addEventListener('click', function () {
+            window.location.href = 'dashboard-usuarios.html';
+        })
+        panelProductos.addEventListener('click', function () {
+            window.location.href = 'dashboard-productos.html';
+        })
+        panelVentas.addEventListener('click', function () {
+            window.location.href = 'dashboard-ventas.html';
+        })
+    </script>
+</body>
+
+</html>

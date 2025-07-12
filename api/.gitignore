@@ -1,0 +1,4 @@
+# Archivos generados automáticamente
+uploads/       # Carpeta de imágenes subidas
+node_modules/  # Dependencias de Node.js
+.env           # Variables de entorno sensibles

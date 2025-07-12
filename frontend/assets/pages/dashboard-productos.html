@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../styles/style-dashboards.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>CRUD Productos</title>
+</head>
+
+<body>
+    <div class="container">
+        <div class="opciones">
+            <button id="btnCrear" class="btn btn-primary">Crear Producto</button>
+            <button id="btnVolver" class="btn btn-back"><i class="fa-solid fa-arrow-left-long"></i>Volver</button>
+        </div>
+        <table id="tablaClientes">
+            <thead>
+                <tr>
+                    <th class="visually-hidden">ID</th>
+                    <th>Nombre</th>
+                    <th>Precio</th>
+                    <th>Descripción</th>
+                    <th>Marca</th>
+                    <th>Categoria</th>
+                    <th>Destacado</th>
+                    <th>Entradas</th>
+                    <th>Salidas</th>
+                    <th>Stock</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+
+            </tbody>
+        </table>
+    </div>
+
+    <div class="modal" id="modalProducto">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5>Producto</h5>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="formProductos" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label for="product_nombre">Nombre</label>
+                        <input type="text" id="product_nombre" class="input" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="product_precio">Precio</label>
+                        <input type="number" step="0.01" id="product_precio" class="input" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="product_descripcion">Descripción</label>
+                        <textarea id="product_descripcion" class="input" rows="3" required></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="product_imagen">Imagen</label>
+                        <input type="file" id="product_imagen" class="input" accept="image/*">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="product_marca">Marca</label>
+                        <input type="text" id="product_marca" class="input" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="product_categoria">Categoria</label>
+                        <select type="text" id="product_categoria" class="input" required>
+                            <option value="Bicicletas">Bicicletas</option>
+                            <option value="Accesorios">Accesorios</option>
+                            <option value="Repuestos">Repuestos</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="product_destacado">Destacado</label>
+                        <input type="checkbox" id="product_destacado" name="destacado">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="product_stock">Entradas</label>
+                        <input type="number" id="product_entradas" class="input">
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary">Cerrar</button>
+                        <button type="submit" class="btn btn-success">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+<script src="../scripts/dash_productos.js"></script>
+
+</html>

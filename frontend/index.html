@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BikeStore - Tu tienda de bicicletas</title>
+    <meta name="description" content="La mejor tienda de bicicletas con los mejores productos al mejor precio" />
+    <link rel="stylesheet" href="assets/styles/index.css" />
+    <link rel="stylesheet" href="assets/styles/carrito.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+</head>
+
+<body>
+    <header>
+        <nav class="navbar">
+            <div class="logo-container">
+                <img src="assets/img/Logo-bikestore.png" alt="BikeStore Logo" class="logo" />
+            </div>
+
+            <div class="hamburger" onclick="toggleMenu()">
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
+
+            <div class="nav-container">
+                <div class="search-container">
+                    <input type="text" placeholder="Busca en nuestra tienda..." class="search-input"
+                        id="search-input" />
+                    <button class="search-button"><i class="fas fa-search"></i></button>
+                </div>
+                <ul class="nav-links" id="nav-menu">
+                    <li><a href="index.html">Inicio</a></li>
+                    <li class="dropdown">
+                        <a href="#productos">Productos <i class="fas fa-chevron-down"></i></a>
+                        <div class="dropdown-content">
+                            <a href="assets/pages/catalogo-bicicletas.html">Bicicletas</a>
+                            <a href="assets/pages/catalogo-accesorios.html">Accesorios</a>
+                            <a href="assets/pages/catalogo-repuestos.html">Repuestos</a>
+                        </div>
+                    </li>
+                    <li><a href="#contacto">Contáctanos</a></li>
+
+                    <li class="contenedor-carrito">
+                        <!-- Cambio realizado -->
+                        <label for="mostrar-el-carrito" class="carrito">
+                            <i class="fas fa-shopping-cart"></i>
+                            Carrito
+                            <span class="count-carrito">0</span><!-- Cambio realizado -->
+                        </label>
+                    </li>
+                    <li id="user-greeting">
+                        <a href="assets/pages/log-in.html" class="login-btn">
+                            <i class="fas fa-user"></i> Iniciar Sesión
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <input type="checkbox" id="mostrar-el-carrito" />
+    <aside class="sidebar">
+        <div class="carrito-menu">
+            <p>No hay productos para mostrar</p>
+            <label for="mostrar-el-carrito" class="cerrar"><i class="fa-solid fa-xmark"></i></label>
+        </div>
+    </aside>
+
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Bienvenidos a <span class="highlight">BikeStore</span></h1>
+            <p>Descubre los mejores productos al mejor precio</p>
+            <div class="hero-buttons">
+                <a href="assets/pages/catalogo.html" class="btn btn-primary">Ver Catálogo</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="featured-products">
+        <h2 class="section-title">Productos Destacados</h2>
+        <div class="product-grid" id="productos-destacados">
+            <!-- Las tarjetas se generarán dinámicamente aquí -->
+        </div>
+    </section>
+
+    <section class="about-us" id="quienes-somos">
+        <div class="about-content">
+            <h2 class="section-title">¿Quiénes Somos?</h2>
+            <p>
+                En BikeStore nos apasiona el ciclismo y nos dedicamos a ofrecer los
+                mejores productos y servicios para ciclistas de todos los niveles. Con
+                más de 10 años de experiencia, hemos construido una comunidad de
+                amantes de las bicicletas.
+            </p>
+            <p>
+                Nuestro compromiso es brindarte calidad, variedad y el mejor servicio
+                al cliente.
+            </p>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-section">
+                <h3>BikeStore</h3>
+                <p>Tu tienda de confianza para todo relacionado con bicicletas.</p>
+            </div>
+            <div class="footer-section">
+                <h3>Enlaces Rápidos</h3>
+                <ul>
+                    <li><a href="index.html">Inicio</a></li>
+                    <li><a href="assets/pages/catalogo.html">Productos</a></li>
+                    <li><a href="#terminos">Términos y Condiciones</a></li>
+                </ul>
+            </div>
+            <div class="footer-section" id="contacto">
+                <h3>Contacto</h3>
+                <p>
+                    <i class="fas fa-map-marker-alt"></i> Av. Principal #123, Ciudad
+                </p>
+                <p><i class="fas fa-phone"></i> 315 2088421</p>
+                <p><i class="fas fa-envelope"></i> info@bikestore.com</p>
+            </div>
+            <div class="footer-section">
+                <h3>Síguenos</h3>
+                <div class="social-icons">
+                    <a href="https://es-la.facebook.com/login/device-based/regular/login/" class="social-icon"><i
+                            class="fa-brands fa-facebook"></i></a>
+                    <a href="https://www.instagram.com/" class="social-icon"><i class="fab fa-instagram"></i></a>
+                    <a href="https://x.com/" class="social-icon"><i class="fab fa-twitter"></i></a>
+                    <a href="https://www.youtube.com/" class="social-icon"><i class="fab fa-youtube"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2025 BikeStore. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+
+    <!-- Modal de Finalizar Compra -->
+    <div id="modal-compra" class="modal">
+        <div class="modal-contenido">
+            <span class="cerrar-modal">&times;</span>
+            <h2>Finalizar Compra</h2>
+            <form id="formulario-compra">
+                <div class="form-group">
+                    <label for="direccion">Dirección de Envío:</label>
+                    <input type="text" id="direccion" name="direccion" required>
+                </div>
+                <div class="form-group">
+                    <label for="metodo-pago">Método de Pago:</label>
+                    <select id="metodo-pago" name="metodo_pago" required>
+                        <option value="">Seleccione un método</option>
+                        <option value="Efectivo">Efectivo</option>
+                        <option value="Tarjeta">Tarjeta</option>
+                        <option value="Transferencia">Transferencia</option>
+                    </select>
+                </div>
+                <div id="resumen-compra" class="resumen-compra"></div>
+                <button type="submit" class="btn-confirmar">Confirmar Compra</button>
+            </form>
+        </div>
+    </div>
+</body>
+
+<script src="assets/scripts/index.js" defer></script>
+<script src="assets/scripts/busqueda.js" defer></script>
+<script src="assets/scripts/auth.js" defer></script>
+</body>
+
+</html>

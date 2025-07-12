@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BikeStore - Catálogo de Accesorios</title>
+    <meta name="description" content="Explora nuestra colección completa de accesorios de alta calidad">
+    <link rel="stylesheet" href="../styles/style-catalogo-accesorios.css">
+    <link rel="stylesheet" href="../styles/carrito.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+</head>
+
+<body>
+    <!-- Header con navegación -->
+    <header>
+        <nav class="navbar">
+            <div class="logo-container">
+                <img src="../img/Logo-bikestore.png" alt="BikeStore Logo" class="logo">
+            </div>
+
+            <div class="hamburger" onclick="toggleMenu()">
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
+
+            <div class="nav-container">
+                <div class="search-container">
+                    <input type="text" placeholder="Busca en nuestra tienda..." class="search-input" id="search-input">
+                    <button class="search-button"><i class="fas fa-search"></i></button>
+                </div>
+                <ul class="nav-links" id="nav-menu">
+                    <li><a href="../../index.html">Inicio</a></li>
+                    <li class="dropdown">
+                        <a href="catalogo.html">Productos <i class="fas fa-chevron-down"></i></a>
+                        <div class="dropdown-content">
+                            <a href="catalogo-bicicletas.html">Bicicletas</a>
+                            <a href="catalogo-accesorios.html">Accesorios</a>
+                            <a href="catalogo-repuestos.html">Repuestos</a>
+                        </div>
+                    </li>
+                    <li><a href="#contacto">Contáctanos</a></li>
+
+                    <li class="contenedor-carrito"><!-- Cambio realizado -->
+                        <label for="mostrar-el-carrito" class="carrito">
+                            <i class="fas fa-shopping-cart"></i>
+                            Carrito
+                            <span class="count-carrito">0</span><!-- Cambio realizado -->
+                        </label>
+                    </li>
+                    <li id="user-greeting">
+                        <a href="log-in.html" class="login-btn">
+                            <i class="fas fa-user"></i> Iniciar Sesión
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Banner del catálogo de accesorios -->
+    <section class="catalog-banner">
+        <div class="banner-content">
+            <h1>Nuestros <span class="highlight">Accesorios</span></h1>
+            <p>Encuentra los mejores accesorios para moverte con libertad</p>
+        </div>
+    </section>
+
+    <!-- Contenedor del catálogo -->
+    <div class="catalog-main-container">
+
+        <!-- Contenedor principal de productos -->
+        <div class="catalog-content">
+            <!-- Sección de bicicletas -->
+            <section class="catalog-section" id="accesorios">
+                <h2 class="section-title">Todas los accesorios</h2>
+                <div class="product-grid">
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-section">
+                <h3>BikeStore</h3>
+                <p>Tu tienda de confianza para todo relacionado con bicicletas.</p>
+            </div>
+            <div class="footer-section">
+                <h3>Enlaces Rápidos</h3>
+                <ul>
+                    <li><a href="index.html">Inicio</a></li>
+                    <li><a href="assets/pages/catalogo.html">Productos</a></li>
+                    <li><a href="#terminos">Términos y Condiciones</a></li>
+                </ul>
+            </div>
+            <div class="footer-section" id="contacto">
+                <h3>Contacto</h3>
+                <p><i class="fas fa-map-marker-alt"></i> Av. Principal #123, Ciudad</p>
+                <p><i class="fas fa-phone"></i> 315 2088421</p>
+                <p><i class="fas fa-envelope"></i> info@bikestore.com</p>
+            </div>
+            <div class="footer-section">
+                <h3>Síguenos</h3>
+                <div class="social-icons">
+                    <a href="https://es-la.facebook.com/login/device-based/regular/login/" class="social-icon"><i
+                            class="fa-brands fa-facebook"></i></a>
+                    <a href="https://www.instagram.com/" class="social-icon"><i class="fab fa-instagram"></i></a>
+                    <a href="https://x.com/" class="social-icon"><i class="fab fa-twitter"></i></a>
+                    <a href="https://www.youtube.com/" class="social-icon"><i class="fab fa-youtube"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2025 BikeStore. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <script src="../scripts/catalogo-accesorios.js" defer></script>
+    <script src="../scripts/auth.js" defer></script>
+    <script src="../scripts/busqueda.js" defer></script>
+    <script src="../scripts/index.js" defer></script>
+</body>
+
+</html>

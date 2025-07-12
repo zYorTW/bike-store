@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../styles/style-dashboards.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>Informe de Ventas</title>
+</head>
+
+<body>
+    <div class="container">
+        <div class="opciones">
+            <button id="btnVolver" class="btn btn-back"><i class="fa-solid fa-arrow-left-long"></i>Volver</button>
+            <input type="date" class="input" id="fecha_Inicial">
+            <input type="date" class="input" id="fecha_Final">
+            <button type="submit" class="btn btn-filtra-fechas" id="ventas_Filtro">Filtrar Ventas</button>
+            <button type="submit" class="btn btn-productos-vendidos" id="productos_Filtro">Productos Mas
+                Vendidos</button>
+        </div>
+        <table id="tablaVentas">
+            <thead id="tablaHeader">
+                <!-- encabezados dinaamicos:-->
+                <tr>
+                    <th class="visually-hidden">ID</th>
+                    <th>Cliente</th>
+                    <th>Producto</th>
+                    <th>Fecha</th>
+                    <th>Dirección</th>
+                    <th>Metodo de pago</th>
+                    <th>Cantidad</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Contenido dinamico creado en el JS -->
+            </tbody>
+        </table>
+    </div>
+    <script src="../scripts/dash_ventas.js"></script>
+</body>
+
+</html>
