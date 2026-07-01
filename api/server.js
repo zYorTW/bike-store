@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require("express");
 const multer = require("multer");
 const path = require("path");
@@ -6,6 +7,7 @@ const cors = require("cors");
 const app = express();
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
+const nodemailer = require("nodemailer");
 const { promisify } = require("util"); // Añade esto
 
 //diskStorage configura dode se guardan los archivos
@@ -44,14 +46,36 @@ app.use(express.json());
 app.use(cors());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-const llaveSecreta = "JDY"; //Clave segura de del jsonwebtoken
+const llaveSecreta = process.env.JWT_SECRET; //Clave secreta del jsonwebtoken, cargada desde .env
 
-//Definimos la conexión a la base de datos
-const conexion = mysql.createConnection({
-  host: "localhost", //localhost puede variar dependiendo del computador
-  user: "root",
-  password: "root",
-  database: "bikeStore",
+// Transportador de correo para el flujo de restablecimiento de contraseña
+const transporterCorreo = nodemailer.createTransport({
+  host: process.env.EMAIL_HOST,
+  port: Number(process.env.EMAIL_PORT) || 587,
+  secure: process.env.EMAIL_SECURE === "true",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
+
+// Definimos un POOL de conexiones a la base de datos (TiDB Cloud), no una conexión única.
+// TiDB Cloud cierra las conexiones inactivas (idle timeout); con una sola conexión persistente
+// eso dejaba la API 500-eando permanentemente en cuanto se perdía. El pool crea conexiones
+// nuevas bajo demanda y descarta las que el servidor cierra, sin necesitar reconexión manual.
+const conexion = mysql.createPool({
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  ssl: {
+    minVersion: "TLSv1.2",
+    rejectUnauthorized: true,
+  },
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
 });
 
 conexion.query = promisify(conexion.query);
@@ -59,35 +83,65 @@ conexion.query = promisify(conexion.query);
 // Funciones
 // =============================================================================================
 
-//funcion para la conexión y la reconexión
+//funcion para verificar la conexión inicial (el pool ya maneja la reconexión por su cuenta)
+// conexion.query ya fue promisificado arriba, por eso se usa con .then/.catch y no con callback.
 function conectarBD() {
-  conexion.connect((error) => {
-    if (error) {
-      //En caso de existir un error en la conexión
-      console.log("[db error]", error); //Mostrar el error por la consola
-      setTimeout(conectarBD, 200); //Esta linea pone un lapso de espera de 200 ms y vuelve a intenar la conexión
-    } else {
-      console.log("¡Conexión exitosa a la base de datos!"); //En caso de que lla conexión sea exitosa mostrará un mensaje.
-    }
-  });
-
-  // Manejo de errores:
-  conexion.on("error", (error) => {
-    //Cuando la conexión este establecida y esta se pierda debido a algún error.
-    if (error.code === "PROTOCOL_CONNECTION_LOST") {
-      conectarBD(); //Se realiza un llamado a la función para restablecer la conexión automaticamente.
-    } else {
-      throw error; //Si no se logra restablecer la conexión por algún motivo, se detendrá la ejecución.
-    }
-  });
+  conexion
+    .query("SELECT 1")
+    .then(() => console.log("¡Conexión exitosa a la base de datos!"))
+    .catch((error) => {
+      console.log("[db error]", error);
+      setTimeout(conectarBD, 200);
+    });
 }
 
 conectarBD();
 
+// Middleware de autenticación: exige un JWT válido en el header Authorization.
+function verificarToken(req, res, next) {
+  const token = req.headers.authorization?.split(" ")[1];
+
+  if (!token) {
+    return res.status(401).json({ message: "Se requiere autenticación" });
+  }
+
+  try {
+    req.usuario = jwt.verify(token, llaveSecreta);
+    next();
+  } catch (error) {
+    if (error.name === "TokenExpiredError") {
+      return res.status(401).json({ message: "Token expirado" });
+    }
+    return res.status(401).json({ message: "Token inválido" });
+  }
+}
+
+// Middleware de autorización: exige que el usuario autenticado sea Administrador.
+// Debe usarse siempre después de verificarToken (depende de req.usuario).
+function requiereAdmin(req, res, next) {
+  if (req.usuario?.rol !== "Administrador") {
+    return res.status(403).json({ message: "No tienes permisos para esta acción" });
+  }
+  next();
+}
+
 /////CRUD COMPLETO/////
+
+// Whitelist de tablas permitidas para el CRUD genérico: el nombre de tabla nunca
+// debe interpolarse en SQL sin validar contra esta lista (evita inyección SQL vía ${tabla}).
+const TABLAS_PERMITIDAS = ["usuarios", "productos", "ventas", "detalle_ventas"];
+
+function validarTabla(tabla) {
+  if (!TABLAS_PERMITIDAS.includes(tabla)) {
+    const error = new Error(`Tabla no permitida: ${tabla}`);
+    error.status = 400;
+    throw error;
+  }
+}
 
 //Función para obtener todos los registros de una tabla especifica de una base de datos:
 function obtenerTodos(tabla) {
+  validarTabla(tabla);
   return new Promise((resolve, reject) => {
     conexion.query(`SELECT * FROM ${tabla}`, (error, resultados) => {
       if (error) {
@@ -101,6 +155,7 @@ function obtenerTodos(tabla) {
 
 //Función para obtener un registro de una tabla especifica por su id, en una base de datos:
 function obtenerUno(tabla, id) {
+  validarTabla(tabla);
   return new Promise((resolve, reject) => {
     conexion.query(
       `SELECT * FROM ${tabla} WHERE id = ?`,
@@ -118,6 +173,7 @@ function obtenerUno(tabla, id) {
 
 //Función para crear un registro de una tabla por su id
 function crear(tabla, data) {
+  validarTabla(tabla);
   return new Promise((resolve, reject) => {
     conexion.query(`INSERT INTO ${tabla} SET ? `, data, (error, resultado) => {
       if (error) {
@@ -132,6 +188,7 @@ function crear(tabla, data) {
 
 //Función para actualizar un registro de una tabla especifica por su id
 function actualizar(tabla, id, data) {
+  validarTabla(tabla);
   return new Promise((resolve, reject) => {
     conexion.query(
       `UPDATE ${tabla} SET ? WHERE id = ?`,
@@ -149,6 +206,7 @@ function actualizar(tabla, id, data) {
 
 //Función para eliminar un registro de una tabla especifica por su id
 function eliminar(tabla, id) {
+  validarTabla(tabla);
   return new Promise((resolve, reject) => {
     conexion.query(
       `DELETE FROM ${tabla} WHERE id = ?`,
@@ -199,8 +257,8 @@ app.get("/", (req, res) => {
 // Endpoints de las Ventas
 // =============================================================================================
 
-// endpoint para obtener ventas filtradas por un rango de fechas
-app.get("/api/ventafiltradas", async (req, res) => {
+// endpoint para obtener ventas filtradas por un rango de fechas — solo Administrador
+app.get("/api/ventafiltradas", verificarToken, requiereAdmin, async (req, res) => {
   // se extraen las fechas de la query
   const { fechaInicio, fechaFin } = req.query;
 
@@ -224,7 +282,7 @@ app.get("/api/ventafiltradas", async (req, res) => {
         v.fecha, 
         u.nombre AS cliente, 
         p.nombre AS producto, 
-        v.dirección, 
+        v.direccion,
         v.metodo_pago,
         dv.cantidad,
         v.total
@@ -359,8 +417,8 @@ app.post("/api/ventas", async (req, res) => {
 // Endpoints de las funcinalidades de los Productos
 // =============================================================================================
 
-// Obtiene productos ordenados por ventas totales (mas vendidos primero)
-app.get("/api/productos/mas-vendidos", async (req, res) => {
+// Obtiene productos ordenados por ventas totales (mas vendidos primero) — solo Administrador
+app.get("/api/productos/mas-vendidos", verificarToken, requiereAdmin, async (req, res) => {
   try {
     // Consulta SQL para sumar cantidades vendidas por producto
     const results = await conexion.query(`
@@ -452,7 +510,7 @@ app.get("/api/productos/destacados", async (req, res) => {
 
     // Agregar propiedad imagen_url a cada producto
     productos.forEach((producto) => {
-      producto.imagen_url = `/uploads/${producto.imagen}`;
+      producto.imagen_url = producto.imagen ? `/uploads/${producto.imagen}` : null;
     });
 
     res.json(productos);
@@ -462,12 +520,32 @@ app.get("/api/productos/destacados", async (req, res) => {
   }
 });
 
+// Obtener un producto puntual por id — uso público: el catálogo y el carrito
+// (verificación de stock antes de agregar/comprar) lo consultan sin sesión.
+// Se define como ruta específica para que no caiga en el CRUD genérico protegido de más abajo.
+app.get("/api/productos/:id", async (req, res) => {
+  try {
+    const [productos] = await conexion
+      .promise()
+      .query("SELECT * FROM productos WHERE id = ?", [req.params.id]);
+
+    productos.forEach((producto) => {
+      producto.imagen_url = producto.imagen ? `/uploads/${producto.imagen}` : null;
+      producto.precio = parseFloat(producto.precio);
+    });
+
+    res.json(productos);
+  } catch (error) {
+    res.status(500).json({ error: "Error al obtener el producto" });
+  }
+});
+
 // ======================================
 // CRUD de productos
 // ======================================
 
-// Crear nuevo producto (con imagen opcional)
-app.post("/api/productos", upload.single("imagen"), async (req, res) => {
+// Crear nuevo producto (con imagen opcional) — solo Administrador
+app.post("/api/productos", verificarToken, requiereAdmin, upload.single("imagen"), async (req, res) => {
   try {
     // Procesar datos del formulario
     const productoData = {
@@ -479,6 +557,7 @@ app.post("/api/productos", upload.single("imagen"), async (req, res) => {
       destacado: req.body.destacado === "true" ? 1 : 0, // Convertir booleano
       categoria: req.body.categoria,
       entradas: parseInt(req.body.entradas) || 0, // Valor por defecto 0
+      salidas: 0, // Un producto nuevo inicia sin salidas registradas
     };
 
     // Llamar a funcion de creacion
@@ -492,8 +571,8 @@ app.post("/api/productos", upload.single("imagen"), async (req, res) => {
   }
 });
 
-// Actualizar producto (con logs detallados)
-app.put("/api/productos/:id", upload.single("imagen"), async (req, res) => {
+// Actualizar producto (con logs detallados) — solo Administrador
+app.put("/api/productos/:id", verificarToken, requiereAdmin, upload.single("imagen"), async (req, res) => {
   try {
     // Log de datos recibidos
     console.log("[Actualizar] ID:", req.params.id);
@@ -540,8 +619,8 @@ app.put("/api/productos/:id", upload.single("imagen"), async (req, res) => {
   }
 });
 
-// Eliminar producto (con validacion de ID)
-app.delete("/api/productos/:id", async (req, res) => {
+// Eliminar producto (con validacion de ID) — solo Administrador
+app.delete("/api/productos/:id", verificarToken, requiereAdmin, async (req, res) => {
   const id = parseInt(req.params.id);
 
   // Validar que el ID sea numerico
@@ -604,8 +683,17 @@ app.post("/api/register", async (req, res) => {
     // Encriptar contraseña con bcrypt
     const hashedPassword = await bcrypt.hash(contraseña, 10);
 
-    // Crear objeto usuario
-    const nuevoUsuario = { ...req.body, contraseña: hashedPassword };
+    // Se construye el objeto explícitamente (whitelist de campos): el registro público
+    // nunca debe poder fijar su propio "rol" ni ningún otro campo no previsto.
+    const nuevoUsuario = {
+      nombre: req.body.nombre,
+      apellido: req.body.apellido,
+      cedula: req.body.cedula,
+      telefono: req.body.telefono,
+      correo,
+      contraseña: hashedPassword,
+      rol: "Cliente",
+    };
 
     // Insertar en base de datos
     await conexion.query("INSERT INTO usuarios SET ?", nuevoUsuario);
@@ -629,32 +717,10 @@ app.post("/api/login", async (req, res) => {
       .json({ message: "Todos los campos son obligatorios" });
   }
 
-  // Login para el administrador
-  const esAdministrador = await new Promise((resolve, reject) => {
-    // conexion.query() es asíncrona: no se puede saber cuando terminará. await pausa la ejecución hasta que este proceso termine.
-    conexion.query(
-      'SELECT * FROM usuarios WHERE correo = ? AND rol = "Administrador"',
-      [correo],
-      (error, resultados) => {
-        if (error) {
-          return reject(error);
-        }
-        resolve(resultados.length === 1);
-      }
-    );
-  });
-
-  if (esAdministrador) {
-    return res
-      .status(201)
-      .json({
-        message: "Bienvenido Administrador, has iniciado sesion correctamente",
-      });
-  }
-
-  // Buscar el usuario en la base de datos
+  // Buscar el usuario por correo, sin importar el rol: la contraseña SIEMPRE se verifica,
+  // tanto para Cliente como para Administrador (antes el Administrador entraba sin validar contraseña).
   conexion.query(
-    'SELECT * FROM usuarios WHERE correo = ? AND rol = "Cliente"',
+    "SELECT * FROM usuarios WHERE correo = ?",
     [correo],
     async (error, resultados) => {
       // Si hay un error con la conexión a la base de datos
@@ -679,15 +745,21 @@ app.post("/api/login", async (req, res) => {
         return res.status(401).json({ message: "Contraseña incorrecta" });
       }
 
-      // Generar el token JWT
+      // Generar el token JWT, incluyendo el rol para autorizar rutas de administrador
       const token = jwt.sign(
-        { id: usuario.id, correo: usuario.correo },
+        { id: usuario.id, correo: usuario.correo, rol: usuario.rol },
         llaveSecreta,
         { expiresIn: "30m" } //Tiempo de expiración
       );
 
-      // Responder a las peticiones con un mensaje y el token
-      res.status(200).json({ message: "Inicio de sesion exitoso", token });
+      const esAdmin = usuario.rol === "Administrador";
+      const mensaje = esAdmin
+        ? "Bienvenido Administrador, has iniciado sesion correctamente"
+        : "Inicio de sesion exitoso";
+
+      // El frontend (log-in.js) distingue Administrador de Cliente por el status code:
+      // 201 = Administrador (redirige al panel admin), 200 = Cliente. Se preserva ese contrato.
+      res.status(esAdmin ? 201 : 200).json({ message: mensaje, token });
     }
   );
 });
@@ -728,11 +800,10 @@ app.get("/api/user", (req, res) => {
 });
 
 // ======================================
-// Endpoint para verificar disponibilidad de email
+// Endpoint para verificar disponibilidad de email (usado en el formulario de registro)
 // ======================================
 app.post("/api/check-email", async (req, res) => {
   const { email } = req.body;
-  console.log("[Verificacion] Email recibido:", email);
 
   try {
     // Consulta rapida para detectar duplicados
@@ -741,11 +812,6 @@ app.post("/api/check-email", async (req, res) => {
       .query("SELECT * FROM usuarios WHERE correo = ?", [email]);
 
     const existe = user.length > 0; // true si hay coincidencias
-    console.log(
-      `[Verificacion] Estado email ${email}: ${
-        existe ? "ocupado" : "disponible"
-      }`
-    );
 
     res.status(200).json({ existe }); // Respuesta simple booleana
   } catch (error) {
@@ -757,20 +823,75 @@ app.post("/api/check-email", async (req, res) => {
 });
 
 // ===============================================
-// Endpoint para restablecer contraseña de usuario
+// Recuperación de contraseña: se envía un enlace con token de un solo uso al correo
+// del usuario. Restablecer la contraseña exige ese token, no solo conocer el correo.
 // ===============================================
 
-app.post("/api/reset-password", async (req, res) => {
-  const { email, nuevaContraseña } = req.body; // Extraer parametros del body
+// Paso 1: solicitar el enlace de restablecimiento
+app.post("/api/forgot-password", async (req, res) => {
+  const { correo } = req.body;
+
+  if (!correo) {
+    return res.status(400).json({ message: "El correo es requerido" });
+  }
 
   try {
+    const [usuarios] = await conexion
+      .promise()
+      .query("SELECT id FROM usuarios WHERE correo = ?", [correo]);
+
+    if (usuarios.length > 0) {
+      const resetToken = jwt.sign(
+        { correo, proposito: "reset-password" },
+        llaveSecreta,
+        { expiresIn: "15m" }
+      );
+
+      const resetUrl = `${process.env.FRONTEND_URL}/assets/pages/resetearContraseña.html?token=${resetToken}`;
+
+      await transporterCorreo.sendMail({
+        from: process.env.EMAIL_USER,
+        to: correo,
+        subject: "Restablece tu contraseña - BikeStore",
+        html: `<p>Solicitaste restablecer tu contraseña. Este enlace es válido por 15 minutos:</p><p><a href="${resetUrl}">${resetUrl}</a></p><p>Si no fuiste tú, ignora este correo.</p>`,
+      });
+    }
+
+    // Respuesta genérica siempre (exista o no el correo) para no revelar qué correos están registrados
+    res.status(200).json({
+      message: "Si el correo está registrado, recibirás un enlace para restablecer tu contraseña",
+    });
+  } catch (error) {
+    console.error("[Error] En forgot-password:", error);
+    res.status(500).json({ message: "Error al procesar la solicitud" });
+  }
+});
+
+// Paso 2: restablecer la contraseña usando el token recibido por correo
+app.post("/api/reset-password", async (req, res) => {
+  const { token, nuevaContraseña } = req.body;
+
+  if (!token || !nuevaContraseña) {
+    return res.status(400).json({
+      success: false,
+      message: "El token y la nueva contraseña son requeridos",
+    });
+  }
+
+  try {
+    const decoded = jwt.verify(token, llaveSecreta);
+
+    if (decoded.proposito !== "reset-password") {
+      return res.status(401).json({ success: false, message: "Token inválido" });
+    }
+
     // Generar hash seguro de la nueva contraseña (salt rounds = 10)
     const hashedPassword = await bcrypt.hash(nuevaContraseña, 10);
 
     // Actualizar contraseña en la base de datos
     await conexion.promise().query(
-      "UPDATE usuarios SET contraseña = ? WHERE correo = ?", // Query parametrizado
-      [hashedPassword, email] // Valores para prevenir SQL injection
+      "UPDATE usuarios SET contraseña = ? WHERE correo = ?",
+      [hashedPassword, decoded.correo]
     );
 
     res.json({
@@ -778,11 +899,21 @@ app.post("/api/reset-password", async (req, res) => {
       message: "Contraseña actualizada correctamente",
     });
   } catch (error) {
+    if (error.name === "TokenExpiredError") {
+      return res.status(401).json({
+        success: false,
+        message: "El enlace expiró, solicita uno nuevo",
+      });
+    }
+    if (error.name === "JsonWebTokenError") {
+      return res.status(401).json({ success: false, message: "Enlace inválido" });
+    }
+
     console.error("[Error] Restableciendo contraseña:", error);
     res.status(500).json({
       success: false,
       error: "Fallo en actualizacion de contraseña",
-      detalle: process.env.NODE_ENV === "development" ? error.message : null, // Detalle solo en dev
+      detalle: process.env.NODE_ENV === "development" ? error.message : null,
     });
   }
 });
@@ -794,28 +925,29 @@ app.post("/api/reset-password", async (req, res) => {
 // ==================================================================
 
 //En este caso de definio un CRUD genérico en donde se utilizarán rutas dinamicas basadas en la tabla que el usuario especifique.
+//Estas rutas solo las usa el panel de Administrador, por eso exigen token + rol Administrador.
 //Todos los registross de una tabla especifica:
-app.get("/api/:tabla", async (req, res) => {
+app.get("/api/:tabla", verificarToken, requiereAdmin, async (req, res) => {
   try {
     const resultados = await obtenerTodos(req.params.tabla);
     res.send(resultados);
   } catch (error) {
-    res.status(500).send(error);
+    res.status(error.status || 500).send({ message: error.message });
   }
 });
 
 // Obtener un registro de una tabla especifica por su id:
-app.get("/api/:tabla/:id", async (req, res) => {
+app.get("/api/:tabla/:id", verificarToken, requiereAdmin, async (req, res) => {
   try {
     const resultado = await obtenerUno(req.params.tabla, req.params.id);
     res.send(resultado);
   } catch (error) {
-    res.status(500).send(error);
+    res.status(error.status || 500).send({ message: error.message });
   }
 });
 
 // Agregar o crear un registro en una tabla especifica:
-app.post("/api/:tabla", async (req, res) => {
+app.post("/api/:tabla", verificarToken, requiereAdmin, async (req, res) => {
   try {
     const { tabla } = req.params; // Nombre de la tabla desde la URL
     const datos = req.body; // Datos recibidos del cliente
@@ -881,7 +1013,7 @@ app.post("/api/:tabla", async (req, res) => {
 });
 
 // actualizar un registro en una tabla especifica por su id:
-app.put("/api/:tabla/:id", async (req, res) => {
+app.put("/api/:tabla/:id", verificarToken, requiereAdmin, async (req, res) => {
   try {
     const resultado = await actualizar(
       req.params.tabla,
@@ -890,22 +1022,22 @@ app.put("/api/:tabla/:id", async (req, res) => {
     );
     res.send(resultado);
   } catch (error) {
-    res.status(500).send(error);
+    res.status(error.status || 500).send({ message: error.message });
   }
 });
 
 // Eliminar un registro en una tabla especifica por su id:
-app.delete("/api/:tabla/:id", async (req, res) => {
+app.delete("/api/:tabla/:id", verificarToken, requiereAdmin, async (req, res) => {
   try {
     const resultado = await eliminar(req.params.tabla, req.params.id);
     res.send(resultado);
   } catch (error) {
-    res.status(500).send(error);
+    res.status(error.status || 500).send({ message: error.message });
   }
 });
 
 //Se realiza o no la conexión
-const puerto = process.env.PUERT || 3600;
+const puerto = process.env.PORT || 3600;
 app.listen(puerto, () => {
   console.log("Servidor corriendo en el puerto:", puerto);
 });

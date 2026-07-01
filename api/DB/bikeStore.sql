@@ -7,7 +7,7 @@ create table usuarios(
 	cedula varchar(20),
     telefono varchar(20),
     correo varchar(225),
-	rol enum("Cliente", "Administrador") default "cliente",
+	rol enum("Cliente", "Administrador") default "Cliente",
     contraseña varchar(255)
 );
 
@@ -24,7 +24,7 @@ create table productos(
     destacado boolean,
     entradas int,
     salidas int,
-	stock INT AS (entradas - salidas) VIRTUAL default 0
+	stock INT AS (entradas - salidas) VIRTUAL
 );
 
 select * from productos;
