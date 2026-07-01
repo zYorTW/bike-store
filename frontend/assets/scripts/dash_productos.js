@@ -1,5 +1,18 @@
+// Escapa texto antes de insertarlo como HTML, para evitar XSS con datos que vienen del servidor
+function escapeHTML(valor) {
+    return String(valor ?? '').replace(/[&<>"']/g, (c) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+}
+
 // Definición de variables
 const url = 'http://localhost:3600/api/productos';
+const token = localStorage.getItem('token');
+
+if (!token) {
+    alert('Debes iniciar sesión como Administrador para acceder a este panel');
+    window.location.href = 'log-in.html';
+}
 const contenedor = document.querySelector('tbody');
 const modal = document.getElementById('modalProducto');
 const formProductos = document.querySelector('form');
@@ -62,11 +75,11 @@ const mostrar = (productos) => {
         contenedor.innerHTML += `
             <tr>
                 <td class="visually-hidden">${productos.id}</td>
-                <td>${productos.nombre}</td>
+                <td>${escapeHTML(productos.nombre)}</td>
                 <td>${productos.precio}</td>
-                <td>${productos.descripcion}</td>
-                <td>${productos.marca}</td>
-                <td>${productos.categoria}</td>
+                <td>${escapeHTML(productos.descripcion)}</td>
+                <td>${escapeHTML(productos.marca)}</td>
+                <td>${escapeHTML(productos.categoria)}</td>
                 <td>${esDestacado}</td>
                 <td>${productos.entradas}</td>
                 <td>${productos.salidas}</td>
@@ -82,7 +95,7 @@ const mostrar = (productos) => {
 };
 
 // Cargar Datos
-fetch(url)
+fetch(url, { headers: { Authorization: `Bearer ${token}` } })
     .then(response => response.json())
     .then(data => mostrar(data))
     .catch(error => console.log(error))
@@ -105,7 +118,8 @@ on(document, 'click', '.btnBorrar', e => {
         fetch(`${url}/${id}`, {
             method: 'DELETE',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`
             }
         })
             .then(response => {
@@ -172,7 +186,10 @@ formProductos.addEventListener('submit', (e) => {
 
     fetch(endPoint, {
         method: method,
-        body: formData // Eliminamos el Content-Type header
+        headers: {
+            Authorization: `Bearer ${token}` // Content-Type se omite: FormData lo define solo (con boundary)
+        },
+        body: formData
     })
         .then(response => response.json())
         .then(data => {
@@ -183,7 +200,7 @@ formProductos.addEventListener('submit', (e) => {
                 //Se recarga la pagina para ver los cambios
                 location.reload(); // Recargar para ver cambios
             } else {
-                fetch(url)
+                fetch(url, { headers: { Authorization: `Bearer ${token}` } })
                     .then(response => response.json())
                     .then(data => mostrar(data));
             }

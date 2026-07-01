@@ -1,3 +1,10 @@
+// Escapa texto antes de insertarlo como HTML, para evitar XSS con datos que vienen del servidor
+function escapeHTML(valor) {
+    return String(valor ?? '').replace(/[&<>"']/g, (c) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+}
+
 // Espera a que la paguina cargue completamente
 document.addEventListener('DOMContentLoaded', () => {
     // Selecciona el input de busqueda y crea contenedor para sugerencias
@@ -25,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
             div.className = 'suggestion-item';
             div.innerHTML = `
     <div class="suggestion-text">
-        <h4>${producto.nombre}</h4>
+        <h4>${escapeHTML(producto.nombre)}</h4>
         <p>$${parseFloat(producto.precio).toFixed(2)}</p>
     </div>
 `;

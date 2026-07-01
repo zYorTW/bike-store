@@ -1,3 +1,10 @@
+// Escapa texto antes de insertarlo como HTML, para evitar XSS con datos que vienen del servidor
+function escapeHTML(valor) {
+    return String(valor ?? '').replace(/[&<>"']/g, (c) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+}
+
 // Verifica cuando la página está lista (cargó el DOM)
 document.addEventListener("DOMContentLoaded", async () => {
     // Obtiene el token guardado en el navegador del usuario
@@ -63,7 +70,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 userGreeting.innerHTML = `
                     <li class="usuario-info">
                         <a href="#" id="logout-btn" class="logout-btn">
-                            <i class="fas fa-sign-out-alt"></i>${userData.nombre}, Cerrar Sesión
+                            <i class="fas fa-sign-out-alt"></i>${escapeHTML(userData.nombre)}, Cerrar Sesión
                         </a>
                     </li>
                 `;

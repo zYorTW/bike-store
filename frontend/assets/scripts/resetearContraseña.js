@@ -9,8 +9,13 @@ document.getElementById('resetForm').addEventListener('submit', async (e) => {
     // Obtiene el valor de la confirmación de la contraseña ingresada
     const confirmarContraseña = document.getElementById('confirmarContraseña').value;
 
-    // Obtiene el parámetro 'email' desde la URL (ejemplo: ?email=usuario@ejemplo.com).
-    const email = new URLSearchParams(window.location.search).get('email');
+    // Obtiene el token de un solo uso desde la URL (ejemplo: ?token=xxxxx), enviado por correo.
+    const token = new URLSearchParams(window.location.search).get('token');
+
+    if (!token) {
+        alert('Enlace inválido. Solicita un nuevo enlace de restablecimiento.');
+        return;
+    }
 
     // Verifica si las contraseñas ingresadas no coinciden
     if (nuevaContraseña !== confirmarContraseña) {
@@ -29,7 +34,7 @@ document.getElementById('resetForm').addEventListener('submit', async (e) => {
         const response = await fetch('http://localhost:3600/api/reset-password', {
             method: 'POST', // Especifica el método HTTP.
             headers: { 'Content-Type': 'application/json' }, // Establece los encabezados.
-            body: JSON.stringify({ email, nuevaContraseña }) // Envía los datos en formato JSON.
+            body: JSON.stringify({ token, nuevaContraseña }) // Envía los datos en formato JSON.
         });
 
         // Convierte la respuesta del servidor a un objeto JSON

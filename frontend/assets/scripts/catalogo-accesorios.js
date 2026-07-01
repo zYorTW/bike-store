@@ -1,4 +1,11 @@
-// Espera a que la paguina cargue completamente 
+// Escapa texto antes de insertarlo como HTML, para evitar XSS con datos que vienen del servidor
+function escapeHTML(valor) {
+    return String(valor ?? '').replace(/[&<>"']/g, (c) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+}
+
+// Espera a que la paguina cargue completamente
 document.addEventListener('DOMContentLoaded', function() {
     cargarProductosAccesorios();  // Llama a la funcion principal al iniciar
 });
@@ -19,11 +26,11 @@ async function cargarProductosAccesorios() {
             productGrid.innerHTML += `
                 <div class="product-card">
                     <div class="product-image">
-                        <img src="${producto.imagen_url || '../assets/img/placeholder.jpg'}"  alt="${producto.nombre}">  <!-- Usa imagen placeholder si no hay URL -->
+                        <img src="${producto.imagen_url || '../assets/img/placeholder.jpg'}"  alt="${escapeHTML(producto.nombre)}">  <!-- Usa imagen placeholder si no hay URL -->
                     </div>
                     <div class="product-info">
-                        <h3>${producto.nombre}</h3>
-                        <p class="product-description">${producto.descripcion}</p>
+                        <h3>${escapeHTML(producto.nombre)}</h3>
+                        <p class="product-description">${escapeHTML(producto.descripcion)}</p>
                         <div class="product-meta">
                             <p class="product-price">$${producto.precio.toLocaleString()}</p>  <!-- Formatea precio con separadores -->
                             ${producto.destacado ? '<span class="destacado">¡Destacado!</span>' : ''}  <!-- Muestra etiqueta si esta destacado -->

@@ -1,5 +1,18 @@
+// Escapa texto antes de insertarlo como HTML, para evitar XSS con datos que vienen del servidor
+function escapeHTML(valor) {
+  return String(valor ?? '').replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+
 // Definición de variables
 const url = "http://localhost:3600/api/ventafiltradas";
+const token = localStorage.getItem("token");
+
+if (!token) {
+  alert("Debes iniciar sesión como Administrador para acceder a este panel");
+  window.location.href = "log-in.html";
+}
 const contenedor = document.querySelector("tbody");
 const fechaInicial = document.getElementById("fecha_Inicial");
 const fechaFinal = document.getElementById("fecha_Final");
@@ -33,11 +46,11 @@ const mostrarVentas = (ventas) => {
   ventas.forEach((venta) => {
     contenedor.innerHTML += `
         <tr>
-            <td>${venta.cliente}</td>
-            <td>${venta.producto}</td>
+            <td>${escapeHTML(venta.cliente)}</td>
+            <td>${escapeHTML(venta.producto)}</td>
             <td>${new Date(venta.fecha).toLocaleDateString()}</td>
-            <td>${venta.dirección}</td> <!-- Ahora existe -->
-            <td>${venta.metodo_pago}</td> <!-- Ahora existe -->
+            <td>${escapeHTML(venta.direccion)}</td>
+            <td>${escapeHTML(venta.metodo_pago)}</td> <!-- Ahora existe -->
             <td>${venta.cantidad}</td>
             <td>$${venta.total.toFixed(2)}</td>
         </tr>
@@ -64,7 +77,7 @@ const mostrarProductosVendidos = (productos) => {
   productos.forEach((producto) => {
       contenedor.innerHTML += `
           <tr>
-              <td>${producto.nombre}</td>
+              <td>${escapeHTML(producto.nombre)}</td>
               <td>${producto.total_vendido}</td>
           </tr>
       `;
@@ -74,7 +87,9 @@ const mostrarProductosVendidos = (productos) => {
 // Escuchador del botón (versión mejorada)
 btnProductos.addEventListener("click", async () => {
     try {
-        const response = await fetch("http://localhost:3600/api/productos/mas-vendidos");
+        const response = await fetch("http://localhost:3600/api/productos/mas-vendidos", {
+            headers: { Authorization: `Bearer ${token}` }
+        });
         
         if (!response.ok) {
             const errorData = await response.json();
@@ -95,7 +110,7 @@ btnProductos.addEventListener("click", async () => {
 btnFiltrar.addEventListener("click", () => {
   const filtroUrl = `${url}?fechaInicio=${fechaInicial.value}&fechaFin=${fechaFinal.value}`;
 
-  fetch(filtroUrl)
+  fetch(filtroUrl, { headers: { Authorization: `Bearer ${token}` } })
     .then(async (response) => {
       if (!response.ok) {
         // Extrae mensaje de error del backend

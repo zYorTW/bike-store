@@ -1,3 +1,10 @@
+// Escapa texto antes de insertarlo como HTML, para evitar XSS con datos que vienen del servidor
+function escapeHTML(valor) {
+    return String(valor ?? '').replace(/[&<>"']/g, (c) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+}
+
 // Función principal al cargar el documento
 document.addEventListener('DOMContentLoaded', function () {
     // Cargar productos por categoría
@@ -18,11 +25,11 @@ async function cargarProductosPorCategoria(contenedorId, categoria) {
             contenedor.innerHTML += `
                 <div class="product-card">
                     <div class="product-image">
-                        <img src="${producto.imagen_url || '/assets/img/placeholder.jpg'}" alt="${producto.nombre}">
+                        <img src="${producto.imagen_url || '/assets/img/placeholder.jpg'}" alt="${escapeHTML(producto.nombre)}">
                     </div>
                     <div class="product-info">
-                        <h3>${producto.nombre}</h3>
-                        <p class="product-description">${producto.descripcion}</p>
+                        <h3>${escapeHTML(producto.nombre)}</h3>
+                        <p class="product-description">${escapeHTML(producto.descripcion)}</p>
                         <div class="product-meta">
                             <p class="product-price">$${producto.precio.toLocaleString()}</p>
                         </div>

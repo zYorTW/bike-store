@@ -1,5 +1,18 @@
+// Escapa texto antes de insertarlo como HTML, para evitar XSS con datos que vienen del servidor
+function escapeHTML(valor) {
+  return String(valor ?? '').replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+
 // Definición de variables
 const url = "http://localhost:3600/api/usuarios";
+const token = localStorage.getItem("token");
+
+if (!token) {
+  alert("Debes iniciar sesión como Administrador para acceder a este panel");
+  window.location.href = "log-in.html";
+}
 const contenedor = document.querySelector("tbody");
 const modal = document.getElementById("modalCliente");
 const formCliente = document.querySelector("form");
@@ -59,12 +72,12 @@ const mostrar = (clientes) => {
     contenedor.innerHTML += `
             <tr>
                 <td class="visually-hidden"> ${cliente.id}</td>
-                <td>${cliente.nombre}</td>
-                <td>${cliente.apellido}</td>
-                <td>${cliente.cedula}</td>
-                <td>${cliente.telefono}</td>
-                <td>${cliente.correo}</td>
-                <td>${cliente.rol}</td>
+                <td>${escapeHTML(cliente.nombre)}</td>
+                <td>${escapeHTML(cliente.apellido)}</td>
+                <td>${escapeHTML(cliente.cedula)}</td>
+                <td>${escapeHTML(cliente.telefono)}</td>
+                <td>${escapeHTML(cliente.correo)}</td>
+                <td>${escapeHTML(cliente.rol)}</td>
                 <td>
                     <button class = "btn btn-primary btnEditar">Editar</button>
 
@@ -76,7 +89,7 @@ const mostrar = (clientes) => {
 };
 
 // Cargar Datos
-fetch(url)
+fetch(url, { headers: { Authorization: `Bearer ${token}` } })
   .then((response) => response.json())
   .then((data) => mostrar(data))
   .catch((error) => console.log(error));
@@ -100,6 +113,7 @@ on(document, "click", ".btnBorrar", (e) => {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
     })
       .then((response) => {
@@ -189,6 +203,7 @@ formCliente.addEventListener("submit", (e) => {
     method: method,
     headers: {
       "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(data),
   })
@@ -208,7 +223,7 @@ formCliente.addEventListener("submit", (e) => {
         const nuevoCliente = [data.body];
         mostrar(nuevoCliente);
       } else {
-        fetch(url)
+        fetch(url, { headers: { Authorization: `Bearer ${token}` } })
           .then((response) => response.json())
           .then((data) => mostrar(data));
       }

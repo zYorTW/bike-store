@@ -1,3 +1,10 @@
+// Escapa texto antes de insertarlo como HTML, para evitar XSS con datos que vienen del servidor
+function escapeHTML(valor) {
+  return String(valor ?? '').replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+
 // =============================================
 // VARIABLES GLOBALES
 // =============================================
@@ -18,8 +25,15 @@ function actualizarCarritoDOM() {
   const carritoMenu = document.querySelector('.carrito-menu'); //Contenedor principal del carrito (donde se muestran los productos)
   const contadorCarrito = document.querySelector('.count-carrito'); //Elemento que muestra el número total de ítems en el carrito (ej: icono con número)
   const totalItems = carrito.reduce((total, item) => total + item.cantidad, 0); // Suma todas las cantidad de los productos en el array carrito
-  contadorCarrito.textContent = totalItems; //Muestra el total de ítems en el icono del carrito (ej: "3" si hay 3 productos)
-  
+  if (contadorCarrito) contadorCarrito.textContent = totalItems; //Muestra el total de ítems en el icono del carrito (ej: "3" si hay 3 productos)
+
+  // El menú lateral del carrito (.carrito-menu) solo existe en index.html. En las demás páginas
+  // (catálogos, login, etc.) solo se actualiza el contador y se persiste el carrito.
+  if (!carritoMenu) {
+    guardarCarrito();
+    return;
+  }
+
   carritoMenu.innerHTML = ''; //Vacía todo el contenido del carrito para reconstruirlo desde cero
   
   //Crea un encabezado con el texto "Tu Carrito" y o agrega al contenedor del carrito
@@ -232,7 +246,7 @@ function mostrarModalCompra() {
   
   carrito.forEach(producto => {
     htmlResumen += `
-      <p>${producto.nombre} - ${producto.cantidad} x $${producto.precio.toFixed(2)} = $${(producto.precio * producto.cantidad).toFixed(2)}</p>
+      <p>${escapeHTML(producto.nombre)} - ${producto.cantidad} x $${producto.precio.toFixed(2)} = $${(producto.precio * producto.cantidad).toFixed(2)}</p>
     `;
   });
   
@@ -389,20 +403,20 @@ async function cargarProductosDestacados() {
     // Contruye cada tarjeta de producto
     productos.forEach((producto) => {
       const stock = producto.entradas - producto.salidas;  // Calcula stock disponible
-      const imagenURL = `http://localhost:3600${producto.imagen_url}`;  // Ruta completa de imagen
+      const imagenURL = producto.imagen_url ? `http://localhost:3600${producto.imagen_url}` : 'img/no-image.png';  // Ruta completa de imagen o placeholder
 
       // Template string con HTML dinamico
       const tarjetaHTML = `
         <div class="product-card">
           <div class="product-image">
-            <img src="${imagenURL}" alt="${producto.nombre}" onerror="this.src='img/no-image.png'">   <!-- Si falla imagen, usa placeholder -->
+            <img src="${imagenURL}" alt="${escapeHTML(producto.nombre)}" onerror="this.src='img/no-image.png'">   <!-- Si falla imagen, usa placeholder -->
           </div>
           <div class="product-info">
-            <h3>${producto.nombre}</h3>  <!-- Nombre del producto -->
+            <h3>${escapeHTML(producto.nombre)}</h3>  <!-- Nombre del producto -->
             <p class="product-price">$${parseFloat(producto.precio).toFixed(2)}</p>  <!-- Precio con 2 decimales -->
             <p class="product-stock">${stock > 0 ? `Disponible: ${stock}` : 'AGOTADO'}</p>  <!-- Muestra stock o agotado -->
-            <p class="product-description">${producto.descripcion || ""}</p>  <!-- Descripcion opcional -->
-            <p class="product-brand">Marca: ${producto.marca || "No especificada"}</p>  <!-- Marca con valor por defecto -->
+            <p class="product-description">${escapeHTML(producto.descripcion)}</p>  <!-- Descripcion opcional -->
+            <p class="product-brand">Marca: ${producto.marca ? escapeHTML(producto.marca) : "No especificada"}</p>  <!-- Marca con valor por defecto -->
             <button class="add-to-cart" data-id="${producto.id}" ${stock <= 0 ? 'disabled' : ''}>
               ${stock <= 0 ? 'Agotado' : 'Añadir al Carrito'}  <!-- Boton dinamico segun stock -->
             </button>
@@ -487,16 +501,23 @@ function checkScroll() {
 // =============================================
 
 // Inicialisacion al cargar la paguina
+// index.js se incluye en varias páginas (catálogos, login, registro), pero los destacados
+// y el modal de compra solo existen en index.html: se verifica su presencia antes de usarlos.
 document.addEventListener("DOMContentLoaded", () => {
-  cargarProductosDestacados();       // Carga productos destacados del backend
+  if (document.getElementById("productos-destacados")) {
+    cargarProductosDestacados();     // Carga productos destacados del backend
+  }
   actualizarCarritoDOM();            // Renderisa carrito inicial
   configurarMenuMobile();            // Aplica logica de menu para moviles
   checkScroll();                     // Chekea scroll al cargar para animaciones
-  
+
   // Evento para animar elementos al hacer scroll
   window.addEventListener("scroll", checkScroll);
-  
+
   // Listaners para el modal de compra
-  document.querySelector(".cerrar-modal").addEventListener("click", cerrarModal);  // Boton cerrar
-  document.getElementById("formulario-compra").addEventListener("submit", finalizarCompra);  // Envio de formulario
+  const cerrarModalBtn = document.querySelector(".cerrar-modal");
+  if (cerrarModalBtn) cerrarModalBtn.addEventListener("click", cerrarModal);  // Boton cerrar
+
+  const formularioCompra = document.getElementById("formulario-compra");
+  if (formularioCompra) formularioCompra.addEventListener("submit", finalizarCompra);  // Envio de formulario
 });

@@ -3,21 +3,17 @@ document.getElementById('recoveryForm').addEventListener('submit', async (e) => 
     const email = document.getElementById('email').value;
 
     try {
-        // Verificar si el email existe
-        const response = await fetch('http://localhost:3600/api/check-email', {
+        // Solicitar el enlace de restablecimiento (el servidor lo envía por correo si existe la cuenta)
+        const response = await fetch('http://localhost:3600/api/forgot-password', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email })
+            body: JSON.stringify({ correo: email })
         });
 
         const data = await response.json();
 
-        if (response.ok) {
-            // Redirigir a la página de nueva contraseña
-            window.location.href = `resetearContraseña.html?email=${encodeURIComponent(email)}`;
-        } else {
-            alert(data.error || 'El correo no está registrado');
-        }
+        // Respuesta genérica siempre: no revela si el correo existe o no
+        alert(data.message || 'Si el correo está registrado, recibirás un enlace para restablecer tu contraseña');
     } catch (error) {
         alert('Error al conectar con el servidor');
     }

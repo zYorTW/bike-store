@@ -1,3 +1,10 @@
+// Escapa texto antes de insertarlo como HTML, para evitar XSS con datos que vienen del servidor
+function escapeHTML(valor) {
+    return String(valor ?? '').replace(/[&<>"']/g, (c) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+}
+
 // Espera a que el documento HTML termine de cargarse
 document.addEventListener('DOMContentLoaded', function() {
     cargarProductosRepuestos(); // Inicia la carga de productos
@@ -18,11 +25,11 @@ async function cargarProductosRepuestos() {
             productGrid.innerHTML += `
                 <div class="product-card">
                     <div class="product-image">
-                        <img src="${producto.imagen_url || 'assets/img/placeholder.jpg'}" alt="${producto.nombre}"> <!-- Usa imagen por defecto si no hay URL -->
+                        <img src="${producto.imagen_url || '../assets/img/placeholder.jpg'}" alt="${escapeHTML(producto.nombre)}"> <!-- Usa imagen por defecto si no hay URL -->
                     </div>
                     <div class="product-info">
-                        <h3>${producto.nombre}</h3>
-                        <p class="product-description">${producto.descripcion}</p>
+                        <h3>${escapeHTML(producto.nombre)}</h3>
+                        <p class="product-description">${escapeHTML(producto.descripcion)}</p>
                         <div class="product-meta">
                             <p class="product-price">$${producto.precio.toLocaleString()}</p> <!-- Formatea numero con separadores -->
                             ${producto.destacado ? '<span class="destacado">¡Destacado!</span>' : ''} <!-- Muestra etiqueta condicional -->

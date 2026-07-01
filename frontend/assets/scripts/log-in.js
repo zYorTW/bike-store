@@ -33,6 +33,7 @@ document.querySelector(".login-form").addEventListener("submit", async (event) =
 
       // Administrador
       if (respuesta.status === 201) {
+          localStorage.setItem("token", data.token);
           alert(data.message);
           window.location.href = "../pages/index-admin.html";
           return;
