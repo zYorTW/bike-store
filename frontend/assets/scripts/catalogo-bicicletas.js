@@ -31,7 +31,7 @@ async function cargarProductosBicicletas() {
                         <h3>${escapeHTML(producto.nombre)}</h3>
                         <p class="product-description">${escapeHTML(producto.descripcion)}</p>
                         <div class="product-meta">
-                            <p class="product-price">$${producto.precio.toLocaleString()}</p>  <!-- Precio con puntos para miles -->
+                            <p class="product-price">$${producto.precio.toLocaleString('es-CO')}</p>  <!-- Precio con puntos para miles -->
                             ${producto.destacado ? '<span class="destacado">¡Destacado!</span>' : ''}  <!-- Etiqueta opcional -->
                         </div>
                         <button class="add-to-cart">Añadir al Carrito</button> 

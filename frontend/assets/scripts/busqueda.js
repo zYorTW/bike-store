@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
             div.innerHTML = `
     <div class="suggestion-text">
         <h4>${escapeHTML(producto.nombre)}</h4>
-        <p>$${parseFloat(producto.precio).toFixed(2)}</p>
+        <p>$${parseFloat(producto.precio).toLocaleString('es-CO')}</p>
     </div>
 `;
 

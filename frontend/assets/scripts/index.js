@@ -5,6 +5,11 @@ function escapeHTML(valor) {
   }[c]));
 }
 
+// Formatea un valor numérico como precio en pesos colombianos (ej: 220000 -> "220.000")
+function formatearPrecio(valor) {
+  return Number(valor).toLocaleString('es-CO', { maximumFractionDigits: 2 });
+}
+
 // =============================================
 // VARIABLES GLOBALES
 // =============================================
@@ -77,7 +82,7 @@ carrito.forEach((producto, index) => {
     // Elemento para mostrar el precio total (precio unitario * cantidad)
     const precio = document.createElement('p');
     precio.className = 'item-precio';  // Clase para estilizar el precio
-    precio.textContent = `$${(producto.precio * producto.cantidad).toFixed(2)}`;  // Calculo y formateo a 2 decimales
+    precio.textContent = `$${formatearPrecio(producto.precio * producto.cantidad)}`;  // Calculo y formateo con separador de miles
     
     // Agrega nombre y precio al contenedor de info
     infoProducto.appendChild(nombre);
@@ -144,7 +149,7 @@ resumen.className = 'resumen-carrito';  // Contenedor flex para alinear elemento
 // Texto del total general
 const textoTotal = document.createElement('p');
 textoTotal.className = 'total-carrito';
-textoTotal.textContent = `Total: $${total.toFixed(2)}`;  // Formato con 2 decimales
+textoTotal.textContent = `Total: $${formatearPrecio(total)}`;  // Formato con separador de miles
 
 // Boton para finalizar compra
 const btnComprar = document.createElement('button');
@@ -172,11 +177,11 @@ function actualizarBotonesCarrito() {
       const productCard = this.closest('.product-card');
       const productId = this.getAttribute('data-id');
       const productName = productCard.querySelector('h3').textContent;
-      const productPrice = parseFloat(productCard.querySelector('.product-price').textContent.replace('$', ''));
-      
+
       try {
         const response = await fetch(`http://localhost:3600/api/productos/${productId}`);
         const [producto] = await response.json();
+        const productPrice = parseFloat(producto.precio);
         const stock = producto.entradas - producto.salidas;
         
         if (stock <= 0) {
@@ -246,11 +251,11 @@ function mostrarModalCompra() {
   
   carrito.forEach(producto => {
     htmlResumen += `
-      <p>${escapeHTML(producto.nombre)} - ${producto.cantidad} x $${producto.precio.toFixed(2)} = $${(producto.precio * producto.cantidad).toFixed(2)}</p>
+      <p>${escapeHTML(producto.nombre)} - ${producto.cantidad} x $${formatearPrecio(producto.precio)} = $${formatearPrecio(producto.precio * producto.cantidad)}</p>
     `;
   });
   
-  htmlResumen += `<p><strong>Total: $${total.toFixed(2)}</strong></p>`;
+  htmlResumen += `<p><strong>Total: $${formatearPrecio(total)}</strong></p>`;
   resumenCompra.innerHTML = htmlResumen;
   
   modal.style.display = "block";
@@ -413,7 +418,7 @@ async function cargarProductosDestacados() {
           </div>
           <div class="product-info">
             <h3>${escapeHTML(producto.nombre)}</h3>  <!-- Nombre del producto -->
-            <p class="product-price">$${parseFloat(producto.precio).toFixed(2)}</p>  <!-- Precio con 2 decimales -->
+            <p class="product-price">$${formatearPrecio(producto.precio)}</p>  <!-- Precio formateado con separador de miles -->
             <p class="product-stock">${stock > 0 ? `Disponible: ${stock}` : 'AGOTADO'}</p>  <!-- Muestra stock o agotado -->
             <p class="product-description">${escapeHTML(producto.descripcion)}</p>  <!-- Descripcion opcional -->
             <p class="product-brand">Marca: ${producto.marca ? escapeHTML(producto.marca) : "No especificada"}</p>  <!-- Marca con valor por defecto -->

@@ -31,7 +31,7 @@ async function cargarProductosRepuestos() {
                         <h3>${escapeHTML(producto.nombre)}</h3>
                         <p class="product-description">${escapeHTML(producto.descripcion)}</p>
                         <div class="product-meta">
-                            <p class="product-price">$${producto.precio.toLocaleString()}</p> <!-- Formatea numero con separadores -->
+                            <p class="product-price">$${producto.precio.toLocaleString('es-CO')}</p> <!-- Formatea numero con separadores -->
                             ${producto.destacado ? '<span class="destacado">¡Destacado!</span>' : ''} <!-- Muestra etiqueta condicional -->
                         </div>
                         <button class="add-to-cart">Añadir al Carrito</button> <!-- Boton sin funcionalidad implementada -->

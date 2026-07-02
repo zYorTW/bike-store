@@ -31,7 +31,7 @@ async function cargarProductosPorCategoria(contenedorId, categoria) {
                         <h3>${escapeHTML(producto.nombre)}</h3>
                         <p class="product-description">${escapeHTML(producto.descripcion)}</p>
                         <div class="product-meta">
-                            <p class="product-price">$${producto.precio.toLocaleString()}</p>
+                            <p class="product-price">$${producto.precio.toLocaleString('es-CO')}</p>
                         </div>
                         <button class="add-to-cart">Añadir al Carrito</button>
                     </div>

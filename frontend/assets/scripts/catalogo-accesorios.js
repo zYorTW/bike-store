@@ -32,7 +32,7 @@ async function cargarProductosAccesorios() {
                         <h3>${escapeHTML(producto.nombre)}</h3>
                         <p class="product-description">${escapeHTML(producto.descripcion)}</p>
                         <div class="product-meta">
-                            <p class="product-price">$${producto.precio.toLocaleString()}</p>  <!-- Formatea precio con separadores -->
+                            <p class="product-price">$${producto.precio.toLocaleString('es-CO')}</p>  <!-- Formatea precio con separadores -->
                             ${producto.destacado ? '<span class="destacado">¡Destacado!</span>' : ''}  <!-- Muestra etiqueta si esta destacado -->
                         </div>
                         <button class="add-to-cart">Añadir al Carrito</button>  
